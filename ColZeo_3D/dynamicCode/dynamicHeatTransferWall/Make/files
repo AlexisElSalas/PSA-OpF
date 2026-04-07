@@ -1,0 +1,6 @@
+# dynamicCode:
+# SHA1 = 7460da6a7de59036b3a94aaa81860346263d4b05
+
+codedMixedFvPatchFieldTemplate.C
+
+LIB = $(PWD)/../platforms/$(WM_OPTIONS)/lib/libdynamicHeatTransferWall_7460da6a7de59036b3a94aaa81860346263d4b05

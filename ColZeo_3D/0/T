@@ -1,0 +1,111 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  11                                    |
+|   \\  /    A nd           | Website:  www.openfoam.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      T;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 0 0 1 0 0 0]; // Kelvin
+
+internalField   uniform 298;
+
+boundaryField
+{
+    inlet
+    {
+        type            fixedValue;
+        value           uniform 298;
+    }
+    outlet
+    {
+        type            inletOutlet;
+        inletValue      uniform 298;
+        value           $internalField;
+    }
+    wall
+    {
+        type            codedMixed;
+        refValue        uniform 298.15;
+        refGradient     uniform 0;
+        valueFraction   uniform 0;
+        name            dynamicHeatTransferWall;
+        codeInclude
+        #{
+            #include "physicoChemicalConstants.H" // Necesario para sigma
+            #include <cmath>
+        #};
+        code
+        #{
+            // 1. Parámetros
+            const scalar T_inf = 298.15;
+            const scalar epsilon_rad = 0.85;
+            const scalar sigma = Foam::constant::physicoChemical::sigma.value();
+            const scalar g = 9.81;
+            const scalar L_char = 1.2;
+            const scalar nu_air = 1.568e-5;
+            const scalar Pr_air = 0.71;
+            const scalar k_air  = 0.0262;
+            const scalar beta   = 1.0 / T_inf;
+
+            // 2. Recuperación de campos
+            const scalarField Tw = this->patchInternalField();
+            const scalarField& delta = this->patch().deltaCoeffs();
+
+            // PROTECCIÓN: Comprobar si kappaEff ya fue creado en createFields.H
+            bool hasKappa = this->db().foundObject<volScalarField>("kappaEff");
+            
+            // 3. Cálculo celda por celda
+            forAll(Tw, i)
+            {
+                scalar deltaT = mag(Tw[i] - T_inf) + 1e-6;
+                scalar Ra = (g * beta * deltaT * pow(L_char, 3.0) / pow(nu_air, 2.0)) * Pr_air;
+
+                // Churchill-Chu
+                scalar Nu = pow(0.825 + (0.387 * pow(Ra, 1.0/6.0)) / 
+                            pow(1.0 + pow(0.492 / Pr_air, 9.0/16.0), 8.0/27.0), 2.0);
+
+                scalar h_conv = (Nu * k_air) / L_char;
+                scalar h_rad = epsilon_rad * sigma * (pow(Tw[i], 2) + pow(T_inf, 2)) * (Tw[i] + T_inf);
+                scalar h_total = h_conv + h_rad;
+
+                // 4. Acoplamiento Protegido
+                scalar k_over_d = 0.0;
+                
+                if (hasKappa)
+                {
+                    const volScalarField& kappa = this->db().lookupObject<volScalarField>("kappaEff");
+                    const scalarField& kappa_w = kappa.boundaryField()[this->patch().index()];
+                    k_over_d = kappa_w[i] * delta[i];
+                }
+
+                this->refValue()[i] = T_inf;
+                // Agregamos + 1e-10 para asegurar que nunca haya división por cero
+                this->valueFraction()[i] = h_total / (h_total + k_over_d + 1e-10);
+            }
+        #};
+    }
+    
+    front
+    {
+        type            wedge;
+    }
+
+    back
+    {
+        type            wedge;
+    }
+
+    axis
+    {
+        type            empty;
+    }
+}

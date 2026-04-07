@@ -1,0 +1,38 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  11                                    |
+|   \\  /    A nd           | Website:  www.openfoam.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     PSA; // Reemplaza por el nombre de tu solver
+
+startFrom       startTime;
+startTime       0;
+stopAt          endTime;
+endTime         200; // Segundos de simulación (ajustar según ruptura del lecho)
+
+deltaT          1e-4; // Paso de tiempo inicial muy pequeño por seguridad
+writeControl    adjustableRunTime;
+writeInterval   0.5;   // Escribir resultados cada 10 segundos de simulación real
+
+purgeWrite      0;
+writeFormat     ascii;
+writePrecision  8;
+writeCompression off;
+timeFormat      general;
+timePrecision   6;
+runTimeModifiable true;
+
+adjustTimeStep  yes;
+maxCo           0.5; // Número de Courant máximo estricto para frentes de concentración
+maxDeltaT       0.1; // Límite superior del paso de tiempo

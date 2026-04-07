@@ -1,0 +1,108 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  11                                    |
+|   \\  /    A nd           | Website:  www.openfoam.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+convertToMeters 1;
+
+vertices
+(
+    // --- Plano z = 0 (Inlet) ---
+    (0 0 0)                           // 0: Eje
+    (0.149857 -0.0065429 0)           // 1: Radio Exterior (-Y)
+    (0.149857  0.0065429 0)           // 2: Radio Exterior (+Y)
+
+    // --- Plano z = 0.867 (Fin Zona Porosa) ---
+    (0 0 0.867)                       // 3: Eje
+    (0.149857 -0.0065429 0.867)       // 4: Radio Exterior (-Y)
+    (0.149857  0.0065429 0.867)       // 5: Radio Exterior (+Y)
+
+    // --- Plano z = 1.4902 (Fin Zona Outflow) ---
+    // 0.867 + 0.6232 = 1.4902 m
+    (0 0 1.4902)                      // 6: Eje
+    (0.149857 -0.0065429 1.4902)      // 7: Radio Exterior (-Y)
+    (0.149857  0.0065429 1.4902)      // 8: Radio Exterior (+Y)
+);
+
+blocks
+(
+    // Zona Porosa (Adsorbente): Colapso estructural hex (0 1 2 0 ...)
+    // Para igualar las densidades reportadas en el artículo, asumimos 50 celdas radiales y 70 axiales
+    hex (0 1 2 0 3 4 5 3) porousZone (50 1 70) simpleGrading (1 1 1)
+    
+    // Zona de Extensión de Salida (Outflow)
+    hex (3 4 5 3 6 7 8 6) outflowZone (50 1 50) simpleGrading (1 1 1)
+);
+
+edges
+(
+);
+
+boundary
+(
+    inlet
+    {
+        type patch;
+        faces
+        (
+            (0 1 2 0)
+        );
+    }
+    outlet
+    {
+        type patch;
+        faces
+        (
+            (6 7 8 6)
+        );
+    }
+    wall
+    {
+        type wall;
+        faces
+        (
+            (1 4 5 2)
+            (4 7 8 5)
+        );
+    }
+    front
+    {
+        type wedge;
+        faces
+        (
+            (0 1 4 3)
+            (3 4 7 6)
+        );
+    }
+    back
+    {
+        type wedge;
+        faces
+        (
+            (0 3 5 2)
+            (3 6 8 5)
+        );
+    }
+    axis
+    {
+        type empty;
+        faces
+        (
+            (0 3 3 0)
+            (3 6 6 3)
+        );
+    }
+);
+
+// ************************************************************************* //

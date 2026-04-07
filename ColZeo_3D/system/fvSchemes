@@ -1,0 +1,70 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  11                                    |
+|   \\  /    A nd           | Website:  www.openfoam.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+ddtSchemes
+{
+    default         Euler; // Transitorio de primer orden implícito (robusto)
+}
+
+gradSchemes
+{
+    default         Gauss linear;
+    grad(p)         Gauss linear;
+}
+
+divSchemes
+{
+    default         none;
+    
+    // Término convectivo de continuidad/momentum
+    div(phi,U)      Gauss limitedLinearV 1; 
+
+    // Términos convectivos de energía térmica
+    div(phi*Cp,T)   Gauss limitedLinear 1;
+    div(phi,T)      Gauss limitedLinear 1;
+    
+    div(phiCp,T)    Gauss upwind;
+
+    // Términos convectivos de transporte de especies
+    div(phi,CO2)  Gauss limitedLinear 1;
+    div(phi,N2)   Gauss upwind; 
+    
+    div((interpolate(rho)*phi),CO2)  Gauss upwind;
+    div((interpolate(rho)*phi),N2)   Gauss upwind;
+    
+    div((interpolate(rho)*phi),U)    Gauss limitedLinearV 1;
+}
+
+laplacianSchemes
+{
+    default         Gauss linear orthogonal; 
+}
+
+interpolationSchemes
+{
+    default         linear;
+}
+
+snGradSchemes
+{
+    default         orthogonal;
+}
+
+fluxRequired
+{
+    default         no;
+    p;
+}

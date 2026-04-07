@@ -1,0 +1,68 @@
+  /*--------------------------------*- C++ -*----------------------------------*\
+  | =========                 |                                                 |
+  | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+  |  \\    /   O peration     | Version:  11                                    |
+  |   \\  /    A nd           | Website:  www.openfoam.org                      |
+  |    \\/     M anipulation  |                                                 |
+  \*---------------------------------------------------------------------------*/
+  FoamFile
+  {
+      format      ascii;
+      class       dictionary;
+      location    "system";
+      object      fvSolution;
+  }
+  // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+  solvers
+  {
+      p
+      {
+          solver          PCG;
+          preconditioner  DIC;
+          tolerance       1e-7;
+          relTol          0.01;
+      }
+
+      pFinal
+      {
+          $p;
+          relTol          0;
+      }
+
+      "(U|T|CO2|N2)"
+      {
+          solver          PBiCGStab;
+          preconditioner  DILU;
+          tolerance       1e-7;
+          relTol          0.1;
+      }
+
+	"(U|T|CO2|N2)Final"
+    {
+        "(U|T|CO2|N2)";
+        solver          PBiCGStab;
+        preconditioner  DILU;
+        tolerance       1e-7;
+        relTol          0;
+    }
+  }
+
+  PIMPLE
+  {
+      nOuterCorrectors 1; // Para flujos simples puedes subir a 2 o usar SIMPLE (steady) 
+      nCorrectors      2;
+      nNonOrthogonalCorrectors 0; // Cambiar a 1 o 2 si tu malla no es perfectamente ortogonal
+  }
+
+  relaxationFactors
+  {
+      equations
+      {
+          // En solvers transitorios puros (PIMPLE), usualmente son 1.0
+          "U.*"           1;
+          "T.*"           1;
+          "CO2.*"         1; 
+          "N2.*"          1;
+      }
+  }
